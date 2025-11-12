@@ -1,0 +1,54 @@
+name: Build U-Boot for Raspberry Pi ARM64
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-uboot:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          bison \
+          flex \
+          libssl-dev \
+          libgnutls28-dev \
+          gcc-aarch64-linux-gnu
+    
+    - name: Configure U-Boot
+      run: |
+        export CROSS_COMPILE=aarch64-linux-gnu-
+        export ARCH=arm64
+        make rpi_arm64_defconfig
+    
+    - name: Build U-Boot
+      run: |
+        export CROSS_COMPILE=aarch64-linux-gnu-
+        export ARCH=arm64
+        make -j$(nproc)
+    
+    - name: Upload U-Boot artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: uboot-rpi-arm64
+        path: |
+          u-boot.bin
+          u-boot
+        retention-days: 30
+    
+    - name: Display build info
+      run: |
+        ls -lh u-boot* || true
+        file u-boot.bin || true
+        echo "Build completed successfully!"
